@@ -89,10 +89,6 @@ var loadBalancerMetricCategories = [
 var loadBalancerMetrics = [for category in loadBalancerMetricCategories: {
   category: category
   enabled: true
-  retentionPolicy: {
-    enabled: true
-    days: retentionInDays
-  }
 }]
 
 // Resources

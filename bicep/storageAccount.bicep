@@ -33,18 +33,10 @@ var metricCategories = [
 var logs = [for category in logCategories: {
   category: category
   enabled: true
-  retentionPolicy: {
-    enabled: true
-    days: retentionInDays
-  }
 }]
 var metrics = [for category in metricCategories: {
   category: category
   enabled: true
-  retentionPolicy: {
-    enabled: true
-    days: retentionInDays
-  }
 }]
 
 // Resources
