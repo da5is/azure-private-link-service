@@ -185,12 +185,6 @@ param dataDiskSize int = 50
 @description('Specifies the caching requirements for the data disks.')
 param dataDiskCaching string = 'ReadWrite'
 
-@description('Specifies the globally unique name for the service storage account used to store the boot diagnostics logs of the virtual machine.')
-param serviceBlobStorageAccountName string = 'serverboot${uniqueString(resourceGroup().id)}'
-
-@description('Specifies the globally unique name for the client storage account used to store the boot diagnostics logs of the virtual machine.')
-param clientBlobStorageAccountName string = 'clientboot${uniqueString(resourceGroup().id)}'
-
 @description('Specifies the relative path of the scripts used to initialize the virtual machine.')
 param scriptFilePath string = 'https://raw.githubusercontent.com/Azure-Samples/compute-automation-configurations/master/'
 
@@ -284,22 +278,6 @@ module serviceWorkspace 'logAnalytics.bicep' = {
   }
 }
 
-module serviceStorageAccount 'storageAccount.bicep' = {
-  name: 'serviceStorageAccount'
-  params: {
-    name: serviceBlobStorageAccountName
-    createContainers: true
-    containerNames: [
-      'todoapi'
-      'todoweb'
-    ]
-    workspaceId: serviceWorkspace.outputs.id
-    retentionInDays: logAnalyticsRetentionInDays
-    location: location
-    tags: tags
-  }
-}
-
 module serviceVirtualNetwork 'network.bicep' = {
   name: 'serviceNetwork'
   params: {
@@ -361,7 +339,6 @@ module serviceVirtualMachine 'virtualMachine.bicep' = {
     vmName: serviceVmName
     vmSize: serviceVmSize
     vmSubnetId: serviceVirtualNetwork.outputs.backendSubnetId
-    storageAccountName: serviceStorageAccount.outputs.name
     imagePublisher: imagePublisher
     imageOffer: imageOffer
     imageSku: imageSku
@@ -409,22 +386,6 @@ module clientWorkspace 'logAnalytics.bicep' = {
   }
 }
 
-module clientStorageAccount 'storageAccount.bicep' = {
-  name: 'clientStorageAccount'
-  params: {
-    name: clientBlobStorageAccountName
-    createContainers: true
-    containerNames: [
-      'todoapi'
-      'todoweb'
-    ]
-    workspaceId: clientWorkspace.outputs.id
-    retentionInDays: logAnalyticsRetentionInDays
-    location: location
-    tags: tags
-  }
-}
-
 module clientVirtualNetwork 'network.bicep' = {
   name: 'clientNetwork'
   params: {
@@ -455,7 +416,6 @@ module clientVirtualMachine 'virtualMachine.bicep' = {
     vmName: clientVmName
     vmSize: clientVmSize
     vmSubnetId: clientVirtualNetwork.outputs.backendSubnetId
-    storageAccountName: clientStorageAccount.outputs.name
     imagePublisher: imagePublisher
     imageOffer: imageOffer
     imageSku: imageSku
