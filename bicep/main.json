@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.38.33.27573",
-      "templateHash": "913215415925815461"
+      "templateHash": "15446620234654387870"
     }
   },
   "parameters": {
@@ -583,7 +583,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.38.33.27573",
-              "templateHash": "14198437633411272867"
+              "templateHash": "1770957882971720572"
             }
           },
           "parameters": {
@@ -627,9 +627,6 @@
               }
             }
           },
-          "variables": {
-            "containerInsightsSolutionName": "[format('ContainerInsights({0})', parameters('name'))]"
-          },
           "resources": [
             {
               "type": "Microsoft.OperationalInsights/workspaces",
@@ -643,26 +640,6 @@
                 },
                 "retentionInDays": "[parameters('retentionInDays')]"
               }
-            },
-            {
-              "type": "Microsoft.OperationsManagement/solutions",
-              "apiVersion": "2015-11-01-preview",
-              "name": "[variables('containerInsightsSolutionName')]",
-              "location": "[parameters('location')]",
-              "tags": "[parameters('tags')]",
-              "plan": {
-                "name": "[variables('containerInsightsSolutionName')]",
-                "promotionCode": "",
-                "product": "OMSGallery/ContainerInsights",
-                "publisher": "Microsoft"
-              },
-              "properties": {
-                "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('name'))]",
-                "containedResources": []
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('name'))]"
-              ]
             }
           ],
           "outputs": {
@@ -2381,7 +2358,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.38.33.27573",
-              "templateHash": "14198437633411272867"
+              "templateHash": "1770957882971720572"
             }
           },
           "parameters": {
@@ -2425,9 +2402,6 @@
               }
             }
           },
-          "variables": {
-            "containerInsightsSolutionName": "[format('ContainerInsights({0})', parameters('name'))]"
-          },
           "resources": [
             {
               "type": "Microsoft.OperationalInsights/workspaces",
@@ -2441,26 +2415,6 @@
                 },
                 "retentionInDays": "[parameters('retentionInDays')]"
               }
-            },
-            {
-              "type": "Microsoft.OperationsManagement/solutions",
-              "apiVersion": "2015-11-01-preview",
-              "name": "[variables('containerInsightsSolutionName')]",
-              "location": "[parameters('location')]",
-              "tags": "[parameters('tags')]",
-              "plan": {
-                "name": "[variables('containerInsightsSolutionName')]",
-                "promotionCode": "",
-                "product": "OMSGallery/ContainerInsights",
-                "publisher": "Microsoft"
-              },
-              "properties": {
-                "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('name'))]",
-                "containedResources": []
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('name'))]"
-              ]
             }
           ],
           "outputs": {
