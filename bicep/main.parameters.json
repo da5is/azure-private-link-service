@@ -8,6 +8,9 @@
     "enableBastion": {
       "value": true
     },
+    "enableNsg": {
+      "value": true
+    },
     "authenticationType": {
       "value": "sshPublicKey"
     },

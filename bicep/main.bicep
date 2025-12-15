@@ -8,6 +8,9 @@ param location string = resourceGroup().location
 @description('Enable or disable Azure Bastion resources across networks.')
 param enableBastion bool = true
 
+@description('Enable or disable Network Security Groups (NSGs) across networks.')
+param enableNsg bool = true
+
 @description('Specifies the name of the service virtual network.')
 param serviceVirtualNetworkName string = '${prefix}ServiceVnet'
 
@@ -299,6 +302,7 @@ module serviceVirtualNetwork 'network.bicep' = {
     bastionSubnetNsgName: '${prefix}ServiceAzureBastionSubnetNsg'
     bastionHostName: serviceBastionHostName
     enableBastion: enableBastion
+    enableNsg: enableNsg
     natGatewayName: '${prefix}ServiceNatGateway'
     workspaceId: serviceWorkspace.outputs.id
     retentionInDays: logAnalyticsRetentionInDays
@@ -408,6 +412,7 @@ module clientVirtualNetwork 'network.bicep' = {
     bastionSubnetNsgName: '${prefix}ClientAzureBastionSubnetNsg'
     bastionHostName: clientBastionHostName
     enableBastion: enableBastion
+    enableNsg: enableNsg
     workspaceId: clientWorkspace.outputs.id
     retentionInDays: logAnalyticsRetentionInDays
     location: location

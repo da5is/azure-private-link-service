@@ -60,6 +60,9 @@ param bastionHostName string
 @description('Enable or disable Azure Bastion resources for this network.')
 param enableBastion bool = true
 
+@description('Enable or disable Network Security Groups for this network.')
+param enableNsg bool = true
+
 @description('Enable/Disable Copy/Paste feature of the Bastion Host resource.')
 param bastionHostDisableCopyPaste bool = false
 
@@ -131,46 +134,10 @@ var bastionMetrics = [for category in bastionMetricCategories: {
 var bastionSubnetName = 'AzureBastionSubnet'
 var bastionPublicIpAddressName = '${bastionHostName}PublicIp'
 
-// Build subnets list dynamically to optionally include Bastion subnet
-var vnetSubnets = concat([
-  {
-    name: frontendSubnetName
-    properties: {
-      addressPrefix: frontendSubnetAddressPrefix
-      privateEndpointNetworkPolicies: frontendSubnetPrivateEndpointNetworkPolicies
-      privateLinkServiceNetworkPolicies: frontendSubnetPrivateLinkServiceNetworkPolicies
-    }
-  }
-  {
-    name: backendSubnetName
-    properties: {
-      addressPrefix: backendSubnetAddressPrefix
-      networkSecurityGroup: !empty(backendSubnetNsgName) ? {
-        id:  backendSubnetNsg.id
-      } : json('null')
-      natGateway:  !empty(natGatewayName) ? {
-        id: natGateway.id
-      } : json('null')
-      privateEndpointNetworkPolicies: backendSubnetPrivateEndpointNetworkPolicies
-      privateLinkServiceNetworkPolicies: backendSubnetPrivateLinkServiceNetworkPolicies
-    }
-  }
-], enableBastion ? [
-  {
-    name: bastionSubnetName
-    properties: {
-      addressPrefix: bastionSubnetAddressPrefix
-      networkSecurityGroup: !empty(bastionSubnetNsgName) ? {
-        id:  bastionSubnetNsg.id
-      } : json('null')
-    }
-  }
-] : [])
-
 // Resources
 
 // Network Security Groups
-resource bastionSubnetNsg 'Microsoft.Network/networkSecurityGroups@2021-08-01' = if (!empty(bastionSubnetNsgName) && enableBastion) {
+resource bastionSubnetNsg 'Microsoft.Network/networkSecurityGroups@2021-08-01' = if (!empty(bastionSubnetNsgName) && enableBastion && enableNsg) {
   name: bastionSubnetNsgName
   location: location
   tags: tags
@@ -322,7 +289,7 @@ resource bastionSubnetNsg 'Microsoft.Network/networkSecurityGroups@2021-08-01' =
   }
 }
 
-resource backendSubnetNsg 'Microsoft.Network/networkSecurityGroups@2021-08-01' = if (!empty(backendSubnetNsgName)) {
+resource backendSubnetNsg 'Microsoft.Network/networkSecurityGroups@2021-08-01' = if (!empty(backendSubnetNsgName) && enableNsg) {
   name: backendSubnetNsgName
   location: location
   tags: tags
@@ -399,7 +366,40 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-08-01' = {
         virtualNetworkAddressPrefixes
       ]
     }
-    subnets: vnetSubnets
+    subnets: concat([
+      {
+        name: frontendSubnetName
+        properties: {
+          addressPrefix: frontendSubnetAddressPrefix
+          privateEndpointNetworkPolicies: frontendSubnetPrivateEndpointNetworkPolicies
+          privateLinkServiceNetworkPolicies: frontendSubnetPrivateLinkServiceNetworkPolicies
+        }
+      }
+      {
+        name: backendSubnetName
+        properties: {
+          addressPrefix: backendSubnetAddressPrefix
+          networkSecurityGroup: (!empty(backendSubnetNsgName) && enableNsg) ? {
+            id:  backendSubnetNsg.id
+          } : json('null')
+          natGateway:  !empty(natGatewayName) ? {
+            id: natGateway.id
+          } : json('null')
+          privateEndpointNetworkPolicies: backendSubnetPrivateEndpointNetworkPolicies
+          privateLinkServiceNetworkPolicies: backendSubnetPrivateLinkServiceNetworkPolicies
+        }
+      }
+    ], enableBastion ? [
+      {
+        name: bastionSubnetName
+        properties: {
+          addressPrefix: bastionSubnetAddressPrefix
+          networkSecurityGroup: (!empty(bastionSubnetNsgName) && enableNsg) ? {
+            id:  bastionSubnetNsg.id
+          } : json('null')
+        }
+      }
+    ] : [])
   }
 }
 
@@ -443,7 +443,7 @@ resource bastionHost 'Microsoft.Network/bastionHosts@2021-08-01' = if (enableBas
 }
 
 // Diagnostic Settings
-resource backendSubnetNsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource backendSubnetNsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(backendSubnetNsgName) && enableNsg) {
   name: diagnosticSettingsName
   scope: backendSubnetNsg
   properties: {
@@ -452,7 +452,7 @@ resource backendSubnetNsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettin
   }
 }
 
-resource bastionSubnetNsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(bastionSubnetNsgName) && enableBastion) {
+resource bastionSubnetNsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(bastionSubnetNsgName) && enableBastion && enableNsg) {
   name: diagnosticSettingsName
   scope: bastionSubnetNsg
   properties: {

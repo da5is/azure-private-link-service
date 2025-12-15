@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.38.33.27573",
-      "templateHash": "15446620234654387870"
+      "templateHash": "4718722446327316558"
     }
   },
   "parameters": {
@@ -28,6 +28,13 @@
       "defaultValue": true,
       "metadata": {
         "description": "Enable or disable Azure Bastion resources across networks."
+      }
+    },
+    "enableNsg": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable or disable Network Security Groups (NSGs) across networks."
       }
     },
     "serviceVirtualNetworkName": {
@@ -714,6 +721,9 @@
           "enableBastion": {
             "value": "[parameters('enableBastion')]"
           },
+          "enableNsg": {
+            "value": "[parameters('enableNsg')]"
+          },
           "natGatewayName": {
             "value": "[format('{0}ServiceNatGateway', parameters('prefix'))]"
           },
@@ -737,7 +747,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.38.33.27573",
-              "templateHash": "11665762258532124869"
+              "templateHash": "12845718519411543990"
             }
           },
           "parameters": {
@@ -854,6 +864,13 @@
               "defaultValue": true,
               "metadata": {
                 "description": "Enable or disable Azure Bastion resources for this network."
+              }
+            },
+            "enableNsg": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable or disable Network Security Groups for this network."
               }
             },
             "bastionHostDisableCopyPaste": {
@@ -986,12 +1003,11 @@
               "AllMetrics"
             ],
             "bastionSubnetName": "AzureBastionSubnet",
-            "bastionPublicIpAddressName": "[format('{0}PublicIp', parameters('bastionHostName'))]",
-            "vnetSubnets": "[concat(createArray(createObject('name', parameters('frontendSubnetName'), 'properties', createObject('addressPrefix', parameters('frontendSubnetAddressPrefix'), 'privateEndpointNetworkPolicies', parameters('frontendSubnetPrivateEndpointNetworkPolicies'), 'privateLinkServiceNetworkPolicies', parameters('frontendSubnetPrivateLinkServiceNetworkPolicies'))), createObject('name', parameters('backendSubnetName'), 'properties', createObject('addressPrefix', parameters('backendSubnetAddressPrefix'), 'networkSecurityGroup', if(not(empty(parameters('backendSubnetNsgName'))), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('backendSubnetNsgName'))), json('null')), 'natGateway', if(not(empty(parameters('natGatewayName'))), createObject('id', resourceId('Microsoft.Network/natGateways', if(not(empty(parameters('natGatewayName'))), parameters('natGatewayName'), 'placeholder'))), json('null')), 'privateEndpointNetworkPolicies', parameters('backendSubnetPrivateEndpointNetworkPolicies'), 'privateLinkServiceNetworkPolicies', parameters('backendSubnetPrivateLinkServiceNetworkPolicies')))), if(parameters('enableBastion'), createArray(createObject('name', variables('bastionSubnetName'), 'properties', createObject('addressPrefix', parameters('bastionSubnetAddressPrefix'), 'networkSecurityGroup', if(not(empty(parameters('bastionSubnetNsgName'))), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('bastionSubnetNsgName'))), json('null'))))), createArray()))]"
+            "bastionPublicIpAddressName": "[format('{0}PublicIp', parameters('bastionHostName'))]"
           },
           "resources": [
             {
-              "condition": "[and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableBastion'))]",
+              "condition": "[and(and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableBastion')), parameters('enableNsg'))]",
               "type": "Microsoft.Network/networkSecurityGroups",
               "apiVersion": "2021-08-01",
               "name": "[parameters('bastionSubnetNsgName')]",
@@ -1145,7 +1161,7 @@
               }
             },
             {
-              "condition": "[not(empty(parameters('backendSubnetNsgName')))]",
+              "condition": "[and(not(empty(parameters('backendSubnetNsgName'))), parameters('enableNsg'))]",
               "type": "Microsoft.Network/networkSecurityGroups",
               "apiVersion": "2021-08-01",
               "name": "[parameters('backendSubnetNsgName')]",
@@ -1226,7 +1242,7 @@
                     "[parameters('virtualNetworkAddressPrefixes')]"
                   ]
                 },
-                "subnets": "[variables('vnetSubnets')]"
+                "subnets": "[concat(createArray(createObject('name', parameters('frontendSubnetName'), 'properties', createObject('addressPrefix', parameters('frontendSubnetAddressPrefix'), 'privateEndpointNetworkPolicies', parameters('frontendSubnetPrivateEndpointNetworkPolicies'), 'privateLinkServiceNetworkPolicies', parameters('frontendSubnetPrivateLinkServiceNetworkPolicies'))), createObject('name', parameters('backendSubnetName'), 'properties', createObject('addressPrefix', parameters('backendSubnetAddressPrefix'), 'networkSecurityGroup', if(and(not(empty(parameters('backendSubnetNsgName'))), parameters('enableNsg')), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('backendSubnetNsgName'))), json('null')), 'natGateway', if(not(empty(parameters('natGatewayName'))), createObject('id', resourceId('Microsoft.Network/natGateways', if(not(empty(parameters('natGatewayName'))), parameters('natGatewayName'), 'placeholder'))), json('null')), 'privateEndpointNetworkPolicies', parameters('backendSubnetPrivateEndpointNetworkPolicies'), 'privateLinkServiceNetworkPolicies', parameters('backendSubnetPrivateLinkServiceNetworkPolicies')))), if(parameters('enableBastion'), createArray(createObject('name', variables('bastionSubnetName'), 'properties', createObject('addressPrefix', parameters('bastionSubnetAddressPrefix'), 'networkSecurityGroup', if(and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableNsg')), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('bastionSubnetNsgName'))), json('null'))))), createArray()))]"
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('backendSubnetNsgName'))]",
@@ -1281,6 +1297,7 @@
               ]
             },
             {
+              "condition": "[and(not(empty(parameters('backendSubnetNsgName'))), parameters('enableNsg'))]",
               "type": "Microsoft.Insights/diagnosticSettings",
               "apiVersion": "2021-05-01-preview",
               "scope": "[format('Microsoft.Network/networkSecurityGroups/{0}', parameters('backendSubnetNsgName'))]",
@@ -1294,7 +1311,7 @@
               ]
             },
             {
-              "condition": "[and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableBastion'))]",
+              "condition": "[and(and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableBastion')), parameters('enableNsg'))]",
               "type": "Microsoft.Insights/diagnosticSettings",
               "apiVersion": "2021-05-01-preview",
               "scope": "[format('Microsoft.Network/networkSecurityGroups/{0}', parameters('bastionSubnetNsgName'))]",
@@ -2489,6 +2506,9 @@
           "enableBastion": {
             "value": "[parameters('enableBastion')]"
           },
+          "enableNsg": {
+            "value": "[parameters('enableNsg')]"
+          },
           "workspaceId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'clientWorkspace'), '2025-04-01').outputs.id.value]"
           },
@@ -2509,7 +2529,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.38.33.27573",
-              "templateHash": "11665762258532124869"
+              "templateHash": "12845718519411543990"
             }
           },
           "parameters": {
@@ -2626,6 +2646,13 @@
               "defaultValue": true,
               "metadata": {
                 "description": "Enable or disable Azure Bastion resources for this network."
+              }
+            },
+            "enableNsg": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable or disable Network Security Groups for this network."
               }
             },
             "bastionHostDisableCopyPaste": {
@@ -2758,12 +2785,11 @@
               "AllMetrics"
             ],
             "bastionSubnetName": "AzureBastionSubnet",
-            "bastionPublicIpAddressName": "[format('{0}PublicIp', parameters('bastionHostName'))]",
-            "vnetSubnets": "[concat(createArray(createObject('name', parameters('frontendSubnetName'), 'properties', createObject('addressPrefix', parameters('frontendSubnetAddressPrefix'), 'privateEndpointNetworkPolicies', parameters('frontendSubnetPrivateEndpointNetworkPolicies'), 'privateLinkServiceNetworkPolicies', parameters('frontendSubnetPrivateLinkServiceNetworkPolicies'))), createObject('name', parameters('backendSubnetName'), 'properties', createObject('addressPrefix', parameters('backendSubnetAddressPrefix'), 'networkSecurityGroup', if(not(empty(parameters('backendSubnetNsgName'))), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('backendSubnetNsgName'))), json('null')), 'natGateway', if(not(empty(parameters('natGatewayName'))), createObject('id', resourceId('Microsoft.Network/natGateways', if(not(empty(parameters('natGatewayName'))), parameters('natGatewayName'), 'placeholder'))), json('null')), 'privateEndpointNetworkPolicies', parameters('backendSubnetPrivateEndpointNetworkPolicies'), 'privateLinkServiceNetworkPolicies', parameters('backendSubnetPrivateLinkServiceNetworkPolicies')))), if(parameters('enableBastion'), createArray(createObject('name', variables('bastionSubnetName'), 'properties', createObject('addressPrefix', parameters('bastionSubnetAddressPrefix'), 'networkSecurityGroup', if(not(empty(parameters('bastionSubnetNsgName'))), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('bastionSubnetNsgName'))), json('null'))))), createArray()))]"
+            "bastionPublicIpAddressName": "[format('{0}PublicIp', parameters('bastionHostName'))]"
           },
           "resources": [
             {
-              "condition": "[and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableBastion'))]",
+              "condition": "[and(and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableBastion')), parameters('enableNsg'))]",
               "type": "Microsoft.Network/networkSecurityGroups",
               "apiVersion": "2021-08-01",
               "name": "[parameters('bastionSubnetNsgName')]",
@@ -2917,7 +2943,7 @@
               }
             },
             {
-              "condition": "[not(empty(parameters('backendSubnetNsgName')))]",
+              "condition": "[and(not(empty(parameters('backendSubnetNsgName'))), parameters('enableNsg'))]",
               "type": "Microsoft.Network/networkSecurityGroups",
               "apiVersion": "2021-08-01",
               "name": "[parameters('backendSubnetNsgName')]",
@@ -2998,7 +3024,7 @@
                     "[parameters('virtualNetworkAddressPrefixes')]"
                   ]
                 },
-                "subnets": "[variables('vnetSubnets')]"
+                "subnets": "[concat(createArray(createObject('name', parameters('frontendSubnetName'), 'properties', createObject('addressPrefix', parameters('frontendSubnetAddressPrefix'), 'privateEndpointNetworkPolicies', parameters('frontendSubnetPrivateEndpointNetworkPolicies'), 'privateLinkServiceNetworkPolicies', parameters('frontendSubnetPrivateLinkServiceNetworkPolicies'))), createObject('name', parameters('backendSubnetName'), 'properties', createObject('addressPrefix', parameters('backendSubnetAddressPrefix'), 'networkSecurityGroup', if(and(not(empty(parameters('backendSubnetNsgName'))), parameters('enableNsg')), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('backendSubnetNsgName'))), json('null')), 'natGateway', if(not(empty(parameters('natGatewayName'))), createObject('id', resourceId('Microsoft.Network/natGateways', if(not(empty(parameters('natGatewayName'))), parameters('natGatewayName'), 'placeholder'))), json('null')), 'privateEndpointNetworkPolicies', parameters('backendSubnetPrivateEndpointNetworkPolicies'), 'privateLinkServiceNetworkPolicies', parameters('backendSubnetPrivateLinkServiceNetworkPolicies')))), if(parameters('enableBastion'), createArray(createObject('name', variables('bastionSubnetName'), 'properties', createObject('addressPrefix', parameters('bastionSubnetAddressPrefix'), 'networkSecurityGroup', if(and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableNsg')), createObject('id', resourceId('Microsoft.Network/networkSecurityGroups', parameters('bastionSubnetNsgName'))), json('null'))))), createArray()))]"
               },
               "dependsOn": [
                 "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('backendSubnetNsgName'))]",
@@ -3053,6 +3079,7 @@
               ]
             },
             {
+              "condition": "[and(not(empty(parameters('backendSubnetNsgName'))), parameters('enableNsg'))]",
               "type": "Microsoft.Insights/diagnosticSettings",
               "apiVersion": "2021-05-01-preview",
               "scope": "[format('Microsoft.Network/networkSecurityGroups/{0}', parameters('backendSubnetNsgName'))]",
@@ -3066,7 +3093,7 @@
               ]
             },
             {
-              "condition": "[and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableBastion'))]",
+              "condition": "[and(and(not(empty(parameters('bastionSubnetNsgName'))), parameters('enableBastion')), parameters('enableNsg'))]",
               "type": "Microsoft.Insights/diagnosticSettings",
               "apiVersion": "2021-05-01-preview",
               "scope": "[format('Microsoft.Network/networkSecurityGroups/{0}', parameters('bastionSubnetNsgName'))]",
