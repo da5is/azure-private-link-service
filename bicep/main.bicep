@@ -5,6 +5,9 @@ param prefix string = '$uniqueString(resourceGroup().id)'
 @description('Specifies the location of AKS cluster.')
 param location string = resourceGroup().location
 
+@description('Enable or disable Azure Bastion resources across networks.')
+param enableBastion bool = true
+
 @description('Specifies the name of the service virtual network.')
 param serviceVirtualNetworkName string = '${prefix}ServiceVnet'
 
@@ -295,6 +298,7 @@ module serviceVirtualNetwork 'network.bicep' = {
     backendSubnetNsgName: '${prefix}Service${serviceBackendSubnetName}Nsg'
     bastionSubnetNsgName: '${prefix}ServiceAzureBastionSubnetNsg'
     bastionHostName: serviceBastionHostName
+    enableBastion: enableBastion
     natGatewayName: '${prefix}ServiceNatGateway'
     workspaceId: serviceWorkspace.outputs.id
     retentionInDays: logAnalyticsRetentionInDays
@@ -403,6 +407,7 @@ module clientVirtualNetwork 'network.bicep' = {
     backendSubnetNsgName: '${prefix}Client${clientBackendSubnetName}Nsg'
     bastionSubnetNsgName: '${prefix}ClientAzureBastionSubnetNsg'
     bastionHostName: clientBastionHostName
+    enableBastion: enableBastion
     workspaceId: clientWorkspace.outputs.id
     retentionInDays: logAnalyticsRetentionInDays
     location: location

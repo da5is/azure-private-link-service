@@ -57,6 +57,9 @@ param bastionSubnetNsgName string = ''
 @description('Specifies the name of the Azure Bastion resource.')
 param bastionHostName string
 
+@description('Enable or disable Azure Bastion resources for this network.')
+param enableBastion bool = true
+
 @description('Enable/Disable Copy/Paste feature of the Bastion Host resource.')
 param bastionHostDisableCopyPaste bool = false
 
@@ -128,10 +131,46 @@ var bastionMetrics = [for category in bastionMetricCategories: {
 var bastionSubnetName = 'AzureBastionSubnet'
 var bastionPublicIpAddressName = '${bastionHostName}PublicIp'
 
+// Build subnets list dynamically to optionally include Bastion subnet
+var vnetSubnets = concat([
+  {
+    name: frontendSubnetName
+    properties: {
+      addressPrefix: frontendSubnetAddressPrefix
+      privateEndpointNetworkPolicies: frontendSubnetPrivateEndpointNetworkPolicies
+      privateLinkServiceNetworkPolicies: frontendSubnetPrivateLinkServiceNetworkPolicies
+    }
+  }
+  {
+    name: backendSubnetName
+    properties: {
+      addressPrefix: backendSubnetAddressPrefix
+      networkSecurityGroup: !empty(backendSubnetNsgName) ? {
+        id:  backendSubnetNsg.id
+      } : json('null')
+      natGateway:  !empty(natGatewayName) ? {
+        id: natGateway.id
+      } : json('null')
+      privateEndpointNetworkPolicies: backendSubnetPrivateEndpointNetworkPolicies
+      privateLinkServiceNetworkPolicies: backendSubnetPrivateLinkServiceNetworkPolicies
+    }
+  }
+], enableBastion ? [
+  {
+    name: bastionSubnetName
+    properties: {
+      addressPrefix: bastionSubnetAddressPrefix
+      networkSecurityGroup: !empty(bastionSubnetNsgName) ? {
+        id:  bastionSubnetNsg.id
+      } : json('null')
+    }
+  }
+] : [])
+
 // Resources
 
 // Network Security Groups
-resource bastionSubnetNsg 'Microsoft.Network/networkSecurityGroups@2021-08-01' = if (!empty(bastionSubnetNsgName)) {
+resource bastionSubnetNsg 'Microsoft.Network/networkSecurityGroups@2021-08-01' = if (!empty(bastionSubnetNsgName) && enableBastion) {
   name: bastionSubnetNsgName
   location: location
   tags: tags
@@ -360,44 +399,12 @@ resource vnet 'Microsoft.Network/virtualNetworks@2021-08-01' = {
         virtualNetworkAddressPrefixes
       ]
     }
-    subnets: [
-      {
-        name: frontendSubnetName
-        properties: {
-          addressPrefix: frontendSubnetAddressPrefix
-          privateEndpointNetworkPolicies: frontendSubnetPrivateEndpointNetworkPolicies
-          privateLinkServiceNetworkPolicies: frontendSubnetPrivateLinkServiceNetworkPolicies
-        }
-      }
-      {
-        name: backendSubnetName
-        properties: {
-          addressPrefix: backendSubnetAddressPrefix
-          networkSecurityGroup: !empty(backendSubnetNsgName) ? {
-            id:  backendSubnetNsg.id
-          } : json('null')
-          natGateway:  !empty(natGatewayName) ? {
-            id: natGateway.id
-          } : json('null')
-          privateEndpointNetworkPolicies: backendSubnetPrivateEndpointNetworkPolicies
-          privateLinkServiceNetworkPolicies: backendSubnetPrivateLinkServiceNetworkPolicies
-        }
-      }
-      {
-        name: bastionSubnetName
-        properties: {
-          addressPrefix: bastionSubnetAddressPrefix
-          networkSecurityGroup: !empty(bastionSubnetNsgName) ? {
-            id:  bastionSubnetNsg.id
-          } : json('null')
-        }
-      }
-    ]
+    subnets: vnetSubnets
   }
 }
 
 // Azure Bastion Host
-resource bastionPublicIpAddress 'Microsoft.Network/publicIPAddresses@2021-08-01' = {
+resource bastionPublicIpAddress 'Microsoft.Network/publicIPAddresses@2021-08-01' = if (enableBastion) {
   name: bastionPublicIpAddressName
   location: location
   tags: tags
@@ -409,7 +416,7 @@ resource bastionPublicIpAddress 'Microsoft.Network/publicIPAddresses@2021-08-01'
   }
 }
 
-resource bastionHost 'Microsoft.Network/bastionHosts@2021-08-01' = {
+resource bastionHost 'Microsoft.Network/bastionHosts@2021-08-01' = if (enableBastion) {
   name: bastionHostName
   location: location
   tags: tags
@@ -445,7 +452,7 @@ resource backendSubnetNsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettin
   }
 }
 
-resource bastionSubnetNsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource bastionSubnetNsgDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(bastionSubnetNsgName) && enableBastion) {
   name: diagnosticSettingsName
   scope: bastionSubnetNsg
   properties: {
@@ -464,7 +471,7 @@ resource vnetDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-0
   }
 }
 
-resource bastionDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+resource bastionDiagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (enableBastion) {
   name: diagnosticSettingsName
   scope: bastionHost
   properties: {

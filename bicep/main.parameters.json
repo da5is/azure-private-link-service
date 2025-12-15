@@ -5,6 +5,9 @@
     "prefix": {
       "value": "Yellow"
     },
+    "enableBastion": {
+      "value": true
+    },
     "authenticationType": {
       "value": "sshPublicKey"
     },
