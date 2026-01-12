@@ -36,48 +36,34 @@ The following diagram shows the high-level architecture created by the [Bicep](h
 
 ```mermaid
 graph TB
-    subgraph Provider["Service Provider VNet
-10.0.0.0/16"]
+    subgraph Provider["Service Provider VNet"]
         direction TB
-        subgraph FrontendProvider["Frontend Subnet
-10.0.0.0/24"]
-            PLS[Private Link Service
-10.0.0.5]
+        subgraph FrontendProvider["Frontend Subnet"]
+            PLS[Private Link Service]
             LB[Standard Load Balancer]
         end
-        subgraph BackendProvider["Backend Subnet
-10.0.1.0/24"]
-            ServiceVM[Service VM
-NGINX Web Server
-10.0.1.4]
+        subgraph BackendProvider["Backend Subnet"]
+            ServiceVM[Service VM<br/>NGINX Web Server]
             NAT[NAT Gateway]
         end
-        subgraph BastionProvider["Bastion Subnet
-10.0.2.0/24"]
+        subgraph BastionProvider["Bastion Subnet"]
             ServiceBastion[Azure Bastion]
         end
-        ServiceLogs[Log Analytics
-Workspace]
+        ServiceLogs[Log Analytics<br/>Workspace]
     end
     
-    subgraph Consumer["Service Consumer VNet
-10.1.0.0/16"]
+    subgraph Consumer["Service Consumer VNet"]
         direction TB
-        subgraph FrontendConsumer["Frontend Subnet
-10.1.0.0/24"]
-            PE[Private Endpoint
-10.1.0.4]
+        subgraph FrontendConsumer["Frontend Subnet"]
+            PE[Private Endpoint]
         end
-        subgraph BackendConsumer["Backend Subnet
-10.1.1.0/24"]
+        subgraph BackendConsumer["Backend Subnet"]
             ClientVM[Client VM]
         end
-        subgraph BastionConsumer["Bastion Subnet
-10.1.2.0/24"]
+        subgraph BastionConsumer["Bastion Subnet"]
             ClientBastion[Azure Bastion]
         end
-        ClientLogs[Log Analytics
-Workspace]
+        ClientLogs[Log Analytics<br/>Workspace]
     end
     
     Internet((Internet))
@@ -99,6 +85,18 @@ Workspace]
     style ServiceVM fill:#50e6ff,color:#000
     style ClientVM fill:#50e6ff,color:#000
 ```
+
+**Network Configuration:**
+
+- **Service Provider VNet**: `10.0.0.0/16`
+  - Frontend Subnet: `10.0.0.0/24` (Private Link Service: `10.0.0.5`)
+  - Backend Subnet: `10.0.1.0/24` (Service VM: `10.0.1.4`)
+  - Bastion Subnet: `10.0.2.0/24`
+
+- **Service Consumer VNet**: `10.1.0.0/16`
+  - Frontend Subnet: `10.1.0.0/24` (Private Endpoint: `10.1.0.4`)
+  - Backend Subnet: `10.1.1.0/24`
+  - Bastion Subnet: `10.1.2.0/24`
 
 Multiple Azure resources are defined in the Bicep modules:
 
