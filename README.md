@@ -39,11 +39,11 @@ graph TB
     subgraph "Service Provider (10.0.0.0/16)"
         direction TB
         subgraph "Frontend Subnet (10.0.0.0/24)"
-            PLS[Private Link Service]
+            PLS[Private Link Service<br/>10.0.0.5]
             LB[Standard Load Balancer]
         end
         subgraph "Backend Subnet (10.0.1.0/24)"
-            ServiceVM[Service VM<br/>NGINX Web Server]
+            ServiceVM[Service VM<br/>NGINX Web Server<br/>10.0.1.4]
             NAT[NAT Gateway]
         end
         subgraph "Bastion Subnet (10.0.2.0/24)"
@@ -55,7 +55,7 @@ graph TB
     subgraph "Service Consumer (10.1.0.0/16)"
         direction TB
         subgraph "Frontend Subnet (10.1.0.0/24)"
-            PE[Private Endpoint]
+            PE[Private Endpoint<br/>10.1.0.4]
         end
         subgraph "Backend Subnet (10.1.1.0/24)"
             ClientVM[Client VM]
